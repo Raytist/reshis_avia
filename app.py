@@ -11,6 +11,7 @@ import os
 import re
 import secrets
 import sqlite3
+import time
 from datetime import datetime, timezone
 from functools import wraps
 from pathlib import Path
@@ -34,9 +35,20 @@ def load_secret_key(instance: Path) -> str:
     if os.environ.get("SECRET_KEY"):
         return os.environ["SECRET_KEY"]
     key_file = instance / "secret_key"
-    if not key_file.exists():
-        key_file.write_text(secrets.token_hex(32), encoding="utf-8")
-    return key_file.read_text(encoding="utf-8").strip()
+    # Создаём файл атомарно (O_EXCL): несколько процессов gunicorn стартуют одновременно,
+    # и все они должны получить один и тот же ключ, иначе сессии будут «теряться» между процессами.
+    try:
+        fd = os.open(key_file, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            f.write(secrets.token_hex(32))
+    except FileExistsError:
+        pass
+    for _ in range(50):   # другой процесс мог создать файл, но ещё не дописать ключ
+        key = key_file.read_text(encoding="utf-8").strip()
+        if key:
+            return key
+        time.sleep(0.05)
+    raise RuntimeError("Не удалось прочитать секретный ключ из instance/secret_key")
 
 
 def create_app(db_path: Path | None = None, forecast_csv: Path | None = None) -> Flask:

@@ -1,0 +1,14 @@
+services:
+  web:
+    build: .
+    ports:
+      - "8080:8000"
+    environment:
+      # задайте свой ключ: SECRET_KEY=... docker compose up; без него ключ сгенерируется и сохранится в томе
+      SECRET_KEY: ${SECRET_KEY:-}
+    volumes:
+      - instance:/app/instance   # пользователи и история запросов переживают перезапуск
+    restart: unless-stopped
+
+volumes:
+  instance:

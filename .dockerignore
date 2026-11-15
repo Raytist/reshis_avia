@@ -1,0 +1,8 @@
+.venv/
+.git/
+instance/
+__pycache__/
+.pytest_cache/
+deploy/
+*.md
+docker-compose.yml
