@@ -427,7 +427,6 @@ function buildCombo(box, items) {
   $("date").max = info.last_day;
   $("date").value = info.first_day <= "2026-06-12" && "2026-06-12" <= info.last_day ? "2026-06-12" : info.first_day;
   syncPriceBounds(true);
-  $("source").textContent = `Данные прогноза: ${info.source}`;
   window.addEventListener("resize", () => lastResult && drawChart(lastResult));
   const me = await api("/api/me");
   me.login ? showApp(me.login) : showAuth();
