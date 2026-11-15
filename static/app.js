@@ -403,6 +403,35 @@ function buildCombo(box, items) {
   render();
 }
 
+// ---------------- онбординг: показываем один раз ----------------
+const ONB_KEY = "reshis-onboarding-done";
+function onboardingSeen() { try { return localStorage.getItem(ONB_KEY) === "1"; } catch { return true; } }
+function runOnboarding() {
+  return new Promise((resolve) => {
+    const box = $("onboarding");
+    const slides = [...box.querySelectorAll(".onb-slide")];
+    const dots = [...$("onbDots").children];
+    let i = 0;
+    const show = () => {
+      slides.forEach((s, k) => s.classList.toggle("on", k === i));
+      dots.forEach((d, k) => d.classList.toggle("on", k === i));
+      $("onbCount").textContent = `${i + 1} из ${slides.length}`;
+      $("onbNext").textContent = i === slides.length - 1 ? "Начать" : "Далее";
+    };
+    const finish = () => {
+      try { localStorage.setItem(ONB_KEY, "1"); } catch { /* приватный режим — просто не запоминаем */ }
+      box.hidden = true;
+      document.body.classList.remove("onb-open");
+      resolve();
+    };
+    $("onbNext").addEventListener("click", () => (i < slides.length - 1 ? (i++, show()) : finish()));
+    $("onbSkip").addEventListener("click", finish);
+    box.hidden = false;
+    document.body.classList.add("onb-open");
+    show();
+  });
+}
+
 // ---------------- старт ----------------
 (async function init() {
   info = await api("/api/routes");
@@ -428,6 +457,7 @@ function buildCombo(box, items) {
   $("date").value = info.first_day <= "2026-06-12" && "2026-06-12" <= info.last_day ? "2026-06-12" : info.first_day;
   syncPriceBounds(true);
   window.addEventListener("resize", () => lastResult && drawChart(lastResult));
+  if (!onboardingSeen()) await runOnboarding();
   const me = await api("/api/me");
   me.login ? showApp(me.login) : showAuth();
 })();

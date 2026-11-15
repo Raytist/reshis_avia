@@ -23,6 +23,66 @@
 </header>
 
 <main>
+<!-- ===== Онбординг (как в «Олимпе»): показывается при первом визите ===== -->
+<section class="onboarding" id="onboarding" hidden aria-label="Знакомство с сервисом">
+  <div class="onb-top">
+    <span class="onb-count" id="onbCount">1 из 4</span>
+    <button type="button" class="onb-skip" id="onbSkip">Пропустить</button>
+  </div>
+  <div class="onb-track" id="onbTrack">
+    <article class="onb-slide">
+      <h1 class="hero-title"><span>Выбери рейс →</span><span class="accent">узнай продажи</span></h1>
+      <p>Укажи направление, дату и цену билета — покажем, сколько мест в самолёте и сколько билетов купят.</p>
+      <svg class="onb-art" viewBox="0 0 240 200" aria-hidden="true">
+        <circle cx="120" cy="100" r="86" fill="#E2EDFA"/>
+        <path d="M44 140c40-46 110-80 156-86" fill="none" stroke="#2A78D6" stroke-width="3" stroke-dasharray="7 7" stroke-linecap="round"/>
+        <circle cx="44" cy="140" r="9" fill="#fff" stroke="#2A78D6" stroke-width="4"/>
+        <circle cx="200" cy="54" r="9" fill="#2A78D6"/>
+        <g transform="translate(122 96) rotate(62) scale(2.6)"><path fill="#2A78D6" d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z" transform="translate(-12 -12)"/></g>
+      </svg>
+    </article>
+    <article class="onb-slide">
+      <h1 class="hero-title"><span>Двигай цену →</span><span class="accent">смотри спрос</span></h1>
+      <p>Модель даёт девять сценариев — от пессимистичного до оптимистичного. Видно, хватит ли мест при твоей цене.</p>
+      <svg class="onb-art" viewBox="0 0 240 200" aria-hidden="true">
+        <circle cx="120" cy="100" r="86" fill="#E2EDFA"/>
+        <g fill="#2A78D6"><rect x="54" y="118" width="16" height="40" rx="5"/><rect x="76" y="106" width="16" height="52" rx="5"/><rect x="98" y="94" width="16" height="64" rx="5"/><rect x="120" y="84" width="16" height="74" rx="5"/><rect x="142" y="78" width="16" height="80" rx="5"/><rect x="164" y="78" width="16" height="80" rx="5"/></g>
+        <g fill="#EB6834" opacity=".85"><rect x="142" y="66" width="16" height="12" rx="4"/><rect x="164" y="52" width="16" height="26" rx="4"/></g>
+        <line x1="44" x2="196" y1="78" y2="78" stroke="#0b0b0b" stroke-width="2.5" stroke-dasharray="6 5"/>
+        <rect x="58" y="176" width="124" height="6" rx="3" fill="#C6DAF3"/><rect x="58" y="176" width="70" height="6" rx="3" fill="#2A78D6"/><circle cx="128" cy="179" r="9" fill="#fff" stroke="#2A78D6" stroke-width="3"/>
+      </svg>
+    </article>
+    <article class="onb-slide">
+      <h1 class="hero-title"><span>Две цены →</span><span class="accent">выбери выгодную</span></h1>
+      <p>Цена из ML-модели для медианного сценария и цена, которая приносит больше прибыли в среднем по всем сценариям.</p>
+      <svg class="onb-art" viewBox="0 0 240 200" aria-hidden="true">
+        <circle cx="120" cy="100" r="86" fill="#E2EDFA"/>
+        <rect x="46" y="62" width="88" height="96" rx="16" fill="#fff" stroke="#C6DAF3" stroke-width="2"/>
+        <rect x="108" y="44" width="88" height="96" rx="16" fill="#2A78D6"/>
+        <text x="152" y="88" text-anchor="middle" font-size="26" font-weight="600" fill="#fff" font-family="Onest, sans-serif">₽</text>
+        <rect x="128" y="102" width="48" height="7" rx="3.5" fill="#fff" opacity=".7"/><rect x="136" y="116" width="32" height="7" rx="3.5" fill="#fff" opacity=".5"/>
+        <rect x="62" y="132" width="40" height="7" rx="3.5" fill="#C6DAF3"/>
+        <circle cx="186" cy="142" r="18" fill="#fff" stroke="#2A78D6" stroke-width="3"/><path d="m178 142 6 6 11-12" fill="none" stroke="#2A78D6" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </article>
+    <article class="onb-slide">
+      <h1 class="hero-title"><span>Весь месяц →</span><span class="accent">на одном экране</span></h1>
+      <p>Календарь подсказывает, в какие дни спрос выше и цену можно поднять. Войди, и прогноз будет сохраняться в истории.</p>
+      <svg class="onb-art" viewBox="0 0 240 200" aria-hidden="true">
+        <circle cx="120" cy="100" r="86" fill="#E2EDFA"/>
+        <rect x="52" y="46" width="136" height="118" rx="18" fill="#fff" stroke="#C6DAF3" stroke-width="2"/>
+        <rect x="52" y="46" width="136" height="26" rx="13" fill="#2A78D6"/>
+        <g fill="#E2EDFA"><rect x="64" y="84" width="22" height="18" rx="5"/><rect x="92" y="84" width="22" height="18" rx="5"/><rect x="148" y="84" width="22" height="18" rx="5"/><rect x="64" y="110" width="22" height="18" rx="5"/><rect x="120" y="110" width="22" height="18" rx="5"/><rect x="92" y="136" width="22" height="18" rx="5"/><rect x="148" y="136" width="22" height="18" rx="5"/></g>
+        <g fill="#2A78D6"><rect x="120" y="84" width="22" height="18" rx="5" opacity=".55"/><rect x="92" y="110" width="22" height="18" rx="5"/><rect x="148" y="110" width="22" height="18" rx="5" opacity=".75"/><rect x="64" y="136" width="22" height="18" rx="5" opacity=".4"/><rect x="120" y="136" width="22" height="18" rx="5"/></g>
+      </svg>
+    </article>
+  </div>
+  <div class="onb-bottom">
+    <div class="onb-dots" id="onbDots"><i></i><i></i><i></i><i></i></div>
+    <button type="button" class="primary onb-next" id="onbNext">Далее</button>
+  </div>
+</section>
+
   <!-- ===== Вход и регистрация ===== -->
   <section class="card auth" id="authView" hidden>
     <div class="hero">
