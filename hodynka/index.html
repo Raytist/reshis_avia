@@ -1,0 +1,1149 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="3D-модель района у Ходынского поля: вертипорты, трассы eVTOL, пробки, шум и маршруты">
+<style>[hidden]{display:none!important} :root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
+<title>Ходынка-2040</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&display=swap">
+<style>
+/* Раскладка как в Google Картах: карта на весь экран; сверху слева поиск, справа от него слои;
+   под поиском карточка места или маршрута (на телефоне — шторка снизу); справа внизу компас, 2D/3D и масштаб;
+   внизу сценарий, время и легенда. Компоненты из «Олимпа» (ideafix): пилюли 30px, поля и карточки 15px,
+   мягкая заливка, шрифт Onest. Акцент синий, «авиационный». Одна светлая тема, как у ideafix. */
+:root {
+  color-scheme: light;
+  --brand: #2A78D6;
+  --brand-ink: #1B5CAB;
+  --soft: #F2F7FD;
+  --soft-2: #E2EDFA;
+  --line: #C6DAF3;
+  --hair: #E4ECF6;
+  --ink: #0F1A2A;
+  --muted: #56657A;
+  --surface: #FFFFFF;
+  --map: #EEF1F4;
+  --metro: #D23A30;
+  --bad: #B3261E;
+  --route-b: #D93025;
+  --seg-walk: #B9C6D6;
+  --seg-wait: #DEE5EE;
+  --seg-bus: #E3A21A;
+  --font: "Onest", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --shadow: 0 1px 2px rgba(16, 52, 104, .10), 0 4px 14px rgba(16, 52, 104, .12);
+  --panel-w: clamp(330px, 28vw, 392px);
+  --top: calc(12px + env(safe-area-inset-top, 0px));
+  --left: max(16px, env(safe-area-inset-left, 0px));
+  --right: max(16px, env(safe-area-inset-right, 0px));
+  --bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  --peek: 76px;
+  --time-h: 100px;
+}
+html, body { height: 100%; }
+body { margin: 0; background: var(--map); color: var(--ink); font: 14px/1.4 var(--font); overflow: hidden;
+  -webkit-tap-highlight-color: transparent; }
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; border: 0; background: none; padding: 0; }
+:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+svg { display: block; }
+#map { position: fixed; inset: 0; }
+
+/* ---------- поиск ---------- */
+.search { position: fixed; z-index: 20; top: var(--top); left: var(--left); width: var(--panel-w); }
+.search-box { display: flex; align-items: center; gap: 2px; height: 48px; padding: 0 4px; background: var(--surface);
+  border-radius: 30px; box-shadow: var(--shadow); }
+.search-box:focus-within { box-shadow: 0 0 0 2px var(--line), var(--shadow); }
+.search-box input { flex: 1; min-width: 0; height: 100%; border: 0; outline: none; background: transparent; font-size: 15px; padding: 0 4px; }
+.search-box input::placeholder { color: var(--muted); }
+.search-box .sep { width: 1px; height: 24px; background: var(--hair); margin: 0 2px; }
+.icon-btn { flex-shrink: 0; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 999px; color: var(--muted); }
+.icon-btn:hover { background: var(--soft); color: var(--brand-ink); }
+.icon-btn svg { width: 20px; height: 20px; }
+.icon-btn.brand { color: var(--brand); }
+.icon-btn.sm { width: 32px; height: 32px; }
+.icon-btn.sm svg { width: 16px; height: 16px; }
+.suggest { margin-top: 6px; background: var(--surface); border: 1px solid var(--hair); border-radius: 15px; box-shadow: var(--shadow);
+  max-height: min(500px, 64vh); overflow-y: auto; }
+.sg-cap { padding: 10px 16px 4px; font-size: 12px; color: var(--muted); }
+.sg { display: flex; align-items: center; gap: 12px; width: 100%; padding: 9px 16px; text-align: left; }
+.sg:hover, .sg.active { background: var(--soft); }
+.sg-main { min-width: 0; display: grid; }
+.sg-t { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sg-m { font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sg-empty { padding: 14px 16px; font-size: 13.5px; color: var(--muted); }
+
+/* ---------- значки мест ---------- */
+.pin { flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center;
+  color: var(--surface); font-weight: 600; font-size: 13px; line-height: 1; }
+.pin.vp { background: var(--brand); }
+.pin.metro { background: var(--metro); font-size: 12px; }
+.pin.plain { background: var(--soft); color: var(--brand-ink); }
+.pin.plain svg { width: 16px; height: 16px; }
+.dot { flex-shrink: 0; width: 12px; height: 12px; margin: 0 8px; border-radius: 50%; }
+
+/* ---------- слои ---------- */
+.chips { position: fixed; z-index: 15; top: var(--top); left: calc(var(--left) + var(--panel-w) + 12px); right: var(--right);
+  height: 48px; display: flex; align-items: center; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 0 2px; }
+.chips::-webkit-scrollbar { display: none; }
+.chip { flex-shrink: 0; display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 14px; border-radius: 30px;
+  background: var(--surface); border: 1px solid var(--hair); box-shadow: var(--shadow); font-size: 13px; white-space: nowrap; }
+.chip:hover { border-color: var(--line); }
+.chip .ck { display: none; width: 16px; height: 16px; }
+.chip[aria-pressed="true"] { background: var(--soft-2); border-color: var(--brand); color: var(--brand-ink); padding-left: 10px; }
+.chip[aria-pressed="true"] .ck { display: block; }
+
+/* ---------- карточка места ---------- */
+.panel { position: fixed; z-index: 10; top: calc(var(--top) + 60px); left: var(--left); width: var(--panel-w);
+  max-height: calc(100% - var(--top) - 60px - var(--bottom)); overflow-y: auto; overscroll-behavior: contain;
+  background: var(--surface); border: 1px solid var(--hair); border-radius: 15px; box-shadow: var(--shadow);
+  scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+.handle { display: none; }
+.pbody { padding: 16px 18px 18px; display: grid; gap: 14px; }
+.phead { display: flex; align-items: flex-start; gap: 6px; }
+.phead .icon-btn { margin: -6px 0 0 -10px; }
+.ptitle { margin: 0; font-size: 20px; line-height: 24px; font-weight: 500; letter-spacing: -.005em; text-wrap: balance; }
+.psub { margin: 3px 0 0; font-size: 13px; color: var(--muted); }
+.actions { display: flex; gap: 4px; }
+.act { flex: 1; min-width: 0; display: grid; justify-items: center; gap: 5px; padding: 4px 2px; font-size: 12px; color: var(--brand-ink); }
+.act .ring { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; border: 1px solid var(--line); background: var(--surface); }
+.act .ring svg { width: 18px; height: 18px; }
+.act:hover .ring { background: var(--soft); }
+.act.primary .ring, .act[aria-pressed="true"] .ring { background: var(--brand); border-color: var(--brand); color: var(--surface); }
+.facts { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--hair); }
+.facts li { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 14px; padding: 10px 0; border-bottom: 1px solid var(--hair); }
+.facts svg { width: 20px; height: 20px; color: var(--brand); margin-top: 1px; }
+.f-t { font-size: 14px; }
+.f-m { margin-top: 1px; font-size: 12.5px; color: var(--muted); }
+.bad .f-t { color: var(--bad); }
+.list { display: grid; gap: 2px; }
+.list h2 { margin: 0 0 4px; font-size: 15px; line-height: 20px; font-weight: 500; }
+.row { display: flex; align-items: center; gap: 12px; width: 100%; padding: 8px 6px; text-align: left; border-radius: 12px; }
+.row:hover { background: var(--soft); }
+.r-main { flex: 1; min-width: 0; display: grid; }
+.r-t { font-size: 14px; }
+.r-m { font-size: 12px; color: var(--muted); }
+.row .chev { flex-shrink: 0; width: 18px; height: 18px; color: var(--brand); }
+.foot { margin: 0; font-size: 12px; color: var(--muted); }
+
+/* ---------- маршрут ---------- */
+.eps { position: relative; display: grid; gap: 6px; padding-right: 40px; }
+.ep { display: flex; align-items: center; gap: 12px; min-height: 50px; padding: 6px 4px 6px 14px; background: var(--soft); border-radius: 15px; }
+.ep-dot { flex-shrink: 0; width: 12px; height: 12px; border-radius: 50%; }
+.ep-dot.a { background: var(--surface); box-shadow: inset 0 0 0 3px var(--ink); }
+.ep-dot.b { background: var(--route-b); }
+.ep-main { flex: 1; min-width: 0; display: grid; }
+.ep-t { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ep-m { font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ep.empty .ep-t { color: var(--muted); }
+.ep.empty .ep-m { white-space: normal; }
+.eps .swap { position: absolute; right: 0; top: 50%; transform: translateY(-50%); }
+.verdict { margin: 0; padding: 10px 12px; border-radius: 12px; background: var(--soft); font-size: 13.5px; }
+.modes { display: grid; gap: 2px; }
+.mode { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; grid-template-areas: "ic nm tm" ". sb sb" ". br br";
+  gap: 3px 12px; align-items: center; padding: 10px 8px; border-radius: 12px; }
+.mode.best { background: var(--soft); }
+.mode > svg { grid-area: ic; width: 20px; height: 20px; color: var(--brand); }
+.m-name { grid-area: nm; font-size: 14px; font-weight: 500; }
+.m-time { grid-area: tm; font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.m-sub { grid-area: sb; font-size: 12px; color: var(--muted); }
+.m-bar { grid-area: br; display: flex; gap: 2px; height: 6px; }
+.m-bar i { display: block; height: 100%; border-radius: 3px; min-width: 2px; }
+.mode.na .m-name, .mode.na .m-time { color: var(--muted); }
+.s-walk { background: var(--seg-walk); }
+.s-wait { background: var(--seg-wait); }
+.s-bus { background: var(--seg-bus); }
+.s-car { background: var(--brand); }
+.s-fly { background: var(--brand-ink); }
+.best-tag { margin-left: 6px; padding: 1px 8px; border-radius: 30px; font-size: 11px; font-weight: 500; color: var(--brand-ink); background: var(--soft-2); }
+.seg-key { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; color: var(--muted); }
+.seg-key span { display: inline-flex; align-items: center; gap: 5px; }
+.seg-key i { display: inline-block; width: 14px; height: 6px; border-radius: 3px; }
+
+/* ---------- кнопки камеры ---------- */
+.ctrl { position: fixed; z-index: 9; right: var(--right); bottom: var(--bottom); display: grid; gap: 8px; justify-items: end; }
+.cbtn { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--surface);
+  box-shadow: var(--shadow); font-size: 13px; font-weight: 600; color: var(--ink); }
+.cbtn:hover { color: var(--brand-ink); background: var(--soft); }
+.cbtn svg { width: 22px; height: 22px; }
+.zoom { display: grid; background: var(--surface); border-radius: 30px; box-shadow: var(--shadow); overflow: hidden; }
+.zoom button { width: 40px; height: 40px; display: grid; place-items: center; color: var(--ink); }
+.zoom button:hover { background: var(--soft); color: var(--brand-ink); }
+.zoom button + button { border-top: 1px solid var(--hair); }
+.zoom svg { width: 20px; height: 20px; }
+
+/* ---------- сценарий, время, легенда ---------- */
+.timebar { position: fixed; z-index: 8; bottom: var(--bottom); left: calc(var(--left) + var(--panel-w) + 16px); right: calc(var(--right) + 56px);
+  display: flex; justify-content: center; pointer-events: none; }
+.tcard { pointer-events: auto; width: min(620px, 100%); background: var(--surface); border: 1px solid var(--hair); border-radius: 15px;
+  box-shadow: var(--shadow); padding: 10px 12px; display: grid; gap: 8px; }
+.seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 3px; padding: 3px; background: var(--soft); border-radius: 30px; }
+.seg button { height: 32px; border-radius: 30px; font-size: 13px; white-space: nowrap; padding: 0 8px; }
+.seg button:hover { background: rgba(255, 255, 255, .6); }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--brand-ink); box-shadow: 0 1px 3px rgba(42, 120, 214, .18); }
+.trow { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.play { flex-shrink: 0; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: var(--brand); color: var(--surface); }
+.play svg { width: 16px; height: 16px; }
+.play:hover { background: var(--brand-ink); }
+.clock { flex-shrink: 0; font-size: 15px; font-weight: 500; font-variant-numeric: tabular-nums; min-width: 2.9em; }
+#scrub { flex: 1; min-width: 60px; accent-color: var(--brand); }
+.snote { font-size: 12px; color: var(--muted); }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--muted); }
+.legend:empty { display: none; }
+.lg { display: inline-flex; align-items: center; gap: 6px; }
+.lg i { display: inline-block; width: 16px; height: 4px; border-radius: 2px; }
+.ramp { display: inline-flex; gap: 2px; }
+.ramp i { width: 14px; height: 6px; }
+
+.tip { position: fixed; z-index: 30; pointer-events: none; max-width: 260px; padding: 6px 10px; background: var(--surface); color: var(--ink);
+  border: 1px solid var(--hair); border-radius: 10px; box-shadow: var(--shadow); font-size: 12.5px; }
+.loading { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; background: var(--map); color: var(--muted); font-size: 14px; }
+
+/* ---------- телефон: шторка снизу ---------- */
+@media (max-width: 759px) {
+  .search { right: var(--right); width: auto; }
+  .chips { top: calc(var(--top) + 56px); left: 0; right: 0; height: 42px; padding: 0 var(--right) 0 var(--left); }
+  .panel { top: auto; left: 0; right: 0; bottom: 0; width: auto; height: 86vh; height: 86dvh; max-height: none; border-radius: 15px 15px 0 0;
+    border-bottom: 0; transform: translateY(calc(86vh - var(--peek) - env(safe-area-inset-bottom, 0px)));
+    transform: translateY(calc(86dvh - var(--peek) - env(safe-area-inset-bottom, 0px))); transition: transform .25s ease; z-index: 12;
+    padding-left: var(--left); padding-right: var(--right); }
+  body[data-sheet="half"] .panel { transform: translateY(40vh); transform: translateY(40dvh); }
+  body[data-sheet="full"] .panel { transform: none; }
+  .handle { display: grid; place-items: center; position: sticky; top: 0; z-index: 1; width: 100%; height: 22px; background: var(--surface); }
+  .handle::before { content: ""; width: 40px; height: 4px; border-radius: 4px; background: var(--line); }
+  .pbody { padding: 2px 2px calc(18px + env(safe-area-inset-bottom, 0px)); }
+  .timebar { left: var(--left); right: var(--right); bottom: calc(var(--peek) + env(safe-area-inset-bottom, 0px) + 8px); }
+  .tcard { width: 100%; padding: 8px 10px; gap: 6px; }
+  .snote, .legend { display: none; }
+  .seg button { font-size: 12.5px; padding: 0 4px; }
+  .ctrl { bottom: calc(var(--peek) + env(safe-area-inset-bottom, 0px) + 16px + var(--time-h)); }
+  .ctrl .zoom { display: none; }
+  .tip { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .panel { transition: none; } }
+</style>
+
+<div id="map" role="application" aria-label="3D-карта района у Ходынского поля с вертипортами и трассами eVTOL"></div>
+<div class="loading" id="loading">Загружаю модель района…</div>
+
+<div class="search" id="search">
+  <div class="search-box">
+    <button class="icon-btn" id="home" aria-label="Карточка района"></button>
+    <input id="q" type="text" inputmode="search" enterkeyhint="search" placeholder="Поиск: вертипорт, улица, дом" autocomplete="off" aria-label="Поиск по модели" aria-controls="suggest">
+    <button class="icon-btn" id="clear" aria-label="Очистить поиск" hidden></button>
+    <span class="icon-btn" id="qicon" aria-hidden="true"></span>
+    <span class="sep" aria-hidden="true"></span>
+    <button class="icon-btn brand" id="routeBtn" aria-label="Маршрут" title="Маршрут"></button>
+  </div>
+  <div class="suggest" id="suggest" role="listbox" hidden></div>
+</div>
+
+<div class="chips" id="chips" role="group" aria-label="Слои карты">
+  <button class="chip" data-l="traffic">Пробки</button>
+  <button class="chip" data-l="corr">Трассы eVTOL</button>
+  <button class="chip" data-l="flights">Полёты</button>
+  <button class="chip" data-l="cars">Машины</button>
+  <button class="chip" data-l="noise">Шум</button>
+  <button class="chip" data-l="zones">Зоны</button>
+</div>
+
+<aside class="panel" id="panel" aria-label="Карточка места">
+  <div class="handle" id="handle" role="button" tabindex="0" aria-label="Развернуть карточку"></div>
+  <div class="pbody" id="pbody"></div>
+</aside>
+
+<div class="ctrl" id="ctrl">
+  <button class="cbtn" id="compass" aria-label="Повернуть на север"></button>
+  <button class="cbtn" id="tilt" aria-label="Вид сверху">2D</button>
+  <div class="zoom">
+    <button id="zin" aria-label="Приблизить"></button>
+    <button id="zout" aria-label="Отдалить"></button>
+  </div>
+</div>
+
+<div class="timebar" id="timebar">
+  <div class="tcard">
+    <div class="seg" id="seg" role="group" aria-label="Сценарий">
+      <button data-s="limit">На пределе</button>
+      <button data-s="price">Билет 400 ₽</button>
+      <button data-s="day">Обычный день</button>
+    </div>
+    <div class="trow">
+      <button class="play" id="play" aria-label="Пауза"></button>
+      <span class="clock" id="clock">8:00</span>
+      <input id="scrub" type="range" min="0" max="3590" step="10" value="0" aria-label="Время в течение часа">
+    </div>
+    <div class="snote" id="snote"></div>
+    <div class="legend" id="legend"></div>
+  </div>
+</div>
+<div class="tip" id="tip" hidden></div>
+
+<script src="https://cdn.jsdelivr.net/npm/deck.gl@9.0.38/dist.min.js"></script>
+<script>
+(async function () {
+  const $ = (s) => document.querySelector(s);
+  // ---------- значки (24×24, линия 1.8) ----------
+  const svg = (d, fill) => `<svg viewBox="0 0 24 24" fill="${fill ? "currentColor" : "none"}" stroke="${fill ? "none" : "currentColor"}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+  const IC = {
+    search: svg('<circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/>'),
+    menu: svg('<path d="M4 7h16M4 12h16M4 17h16"/>'),
+    close: svg('<path d="M6 6l12 12M18 6 6 18"/>'),
+    back: svg('<path d="M15 5l-7 7 7 7"/>'),
+    chev: svg('<path d="m9 6 6 6-6 6"/>'),
+    check: svg('<path d="m5 12.5 4.5 4.5L19 7.5"/>'),
+    plus: svg('<path d="M12 5v14M5 12h14"/>'),
+    minus: svg('<path d="M5 12h14"/>'),
+    play: svg('<path d="M8 5.5v13l11-6.5z"/>', true),
+    pause: svg('<path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z"/>', true),
+    compass: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 15 12H9z" fill="#D23A30"/><path d="M12 21 9 12h6z" fill="#9AA6B6"/></svg>',
+    people: svg('<circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c.6-3.3 2.8-5 5.5-5s4.9 1.7 5.5 5"/><circle cx="17" cy="9" r="2.4"/><path d="M16 14.2c2.3.2 3.9 1.7 4.5 4.3"/>'),
+    trips: svg('<path d="M4 8h13l-3-3M20 16H7l3 3"/>'),
+    walk: svg('<circle cx="13" cy="4.5" r="1.8"/><path d="m10 21 2-6 3 3v3M8.5 11l2.5-3.5 3.5 1 2 3.5M11 7.5 10 14"/>'),
+    bus: svg('<rect x="5" y="3.5" width="14" height="14" rx="2.5"/><path d="M5 10.5h14M8 17.5V20M16 17.5V20"/><circle cx="8.5" cy="14" r=".9" fill="currentColor"/><circle cx="15.5" cy="14" r=".9" fill="currentColor"/>'),
+    car: svg('<path d="M4.5 16.5v-4l2.2-5h10.6l2.2 5v4M3.5 16.5h17M7 12.5h10"/><circle cx="7.5" cy="16.8" r="1.7"/><circle cx="16.5" cy="16.8" r="1.7"/>'),
+    clock: svg('<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>'),
+    ticket: svg('<path d="M4 7.5h16v3a2 2 0 0 0 0 3v3H4v-3a2 2 0 0 0 0-3z"/><path d="M14 7.5v9" stroke-dasharray="1.5 2"/>'),
+    pad: svg('<circle cx="12" cy="12" r="8.5"/><path d="M9 8v8M15 8v8M9 12h6"/>'),
+    noise: svg('<path d="M4 10v4h3.5L12 18V6L7.5 10z"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/>'),
+    plane: svg('<path d="M3 13.5 21 7l-5 13-3.5-5.5z"/><path d="m12.5 14.5 3-3"/>'),
+    area: svg('<path d="M4 4h16v16H4z" stroke-dasharray="3 2.5"/>'),
+    home: svg('<path d="M4 11 12 4l8 7M6 9.5V20h12V9.5"/>'),
+    flat: svg('<path d="M4 4h16v16H4zM4 12h16M12 4v16"/>'),
+    target: svg('<circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>'),
+    zones: svg('<path d="M12 3 20 7.5v9L12 21l-8-4.5v-9z"/><path d="M12 3v18M4 7.5l16 9M20 7.5l-16 9" stroke-opacity=".45"/>'),
+    building: svg('<path d="M5 21V5l8-2v18M13 9h6v12M8 8h2M8 12h2M8 16h2M16 13h1M16 17h1M3 21h18"/>'),
+    road: svg('<path d="M8 3 5 21M16 3l3 18M12 4v3M12 11v3M12 18v2"/>'),
+    pin: svg('<path d="M12 21s-6.5-6.2-6.5-11a6.5 6.5 0 0 1 13 0c0 4.8-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/>'),
+    work: svg('<path d="M4 8h16v11H4zM9 8V5.5h6V8M4 13h16"/>'),
+    arrows: svg('<path d="M12 4v16M8 8l4-4 4 4M8 16l4 4 4-4"/>'),
+    route: svg('<path d="M12 2.8 21.2 12 12 21.2 2.8 12z"/><path d="M9.5 14.5v-3h5.5M13 9l2 2.5-2 2.5"/>'),
+    from: svg('<circle cx="12" cy="12" r="6.5"/><circle cx="12" cy="12" r="2.2" fill="currentColor"/>'),
+    to: svg('<path d="M12 21s-6.5-6.2-6.5-11a6.5 6.5 0 0 1 13 0c0 4.8-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3" fill="currentColor"/>'),
+    swap: svg('<path d="M8 4v16M8 4 5 7M8 4l3 3M16 20V4M16 20l-3-3M16 20l3-3"/>'),
+  };
+  $("#home").innerHTML = IC.menu; $("#clear").innerHTML = IC.close; $("#qicon").innerHTML = IC.search; $("#routeBtn").innerHTML = IC.route;
+  $("#compass").innerHTML = IC.compass; $("#zin").innerHTML = IC.plus; $("#zout").innerHTML = IC.minus;
+  document.querySelectorAll(".chip").forEach((b) => b.insertAdjacentHTML("afterbegin", `<span class="ck">${IC.check}</span>`));
+
+  let D;
+  try {
+    D = await (await fetch("twin.json")).json();
+  } catch (e) {
+    $("#loading").textContent = "Не удалось загрузить данные модели. Обновите страницу.";
+    return;
+  }
+  try { await Promise.race([document.fonts.load('500 14px "Onest"'), new Promise((r) => setTimeout(r, 2500))]); } catch (e) { /* шрифт подставится системный */ }
+  // карты шума грузим обычным <img>: на опубликованной странице запросы fetch к data:-адресам запрещены,
+  // а библиотека карты берёт картинки именно через fetch — слой тогда молча пропадает
+  const NOISE_IMG = {};
+  await Promise.all(["limit", "price"].map((k) => new Promise((res) => {
+    const im = new Image();
+    im.onload = () => { NOISE_IMG[k] = im; res(); };
+    im.onerror = () => res();
+    im.src = D.noise[k];
+  })));
+  $("#loading").hidden = true;
+
+  const S = D.stats, PRM = D.params;
+  // на телефоне рядом с поиском кнопка маршрута — длинная подсказка не помещается
+  const setPlaceholder = () => { $("#q").placeholder = window.matchMedia("(max-width: 759px)").matches ? "Поиск по модели" : "Поиск: вертипорт, улица, дом"; };
+  setPlaceholder();
+  window.matchMedia("(max-width: 759px)").addEventListener("change", setPlaceholder);
+  const fmt = (n) => Math.round(n).toLocaleString("ru-RU");
+  const dec = (x, d = 1) => Number(x).toFixed(d).replace(".", ",");
+  const mins = (s) => Math.max(1, Math.round(s / 60));
+  const form = (n, f) => { const a = Math.abs(Math.round(n)) % 100, b = a % 10; return f[a > 10 && a < 20 ? 2 : b === 1 ? 0 : b >= 2 && b <= 4 ? 1 : 2]; };
+  const W_ = { res: ["житель", "жителя", "жителей"], resG: ["жителя", "жителей", "жителей"], trip: ["поездка", "поездки", "поездок"],
+    fl: ["полёт", "полёта", "полётов"], flP: ["полёте", "полётах", "полётах"], dep: ["вылет", "вылета", "вылетов"],
+    man: ["человек", "человека", "человек"], floor: ["этаж", "этажа", "этажей"] };
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const KIND = { residential: "Жилой дом", office: "Офисное здание", commercial: "Торговое здание", industrial: "Производственное здание",
+    school: "Школа", kindergarten: "Детский сад", university: "Вуз", public: "Общественное здание", sport: "Спортивный объект",
+    transport: "Транспортное здание", service: "Служебное здание", other: "Здание" };
+  const ROADK = { trunk: "Магистраль", primary: "Главная улица", secondary: "Районная улица", tertiary: "Улица местного значения", other: "Проезд" };
+  const level = (v) => v < 0.55 ? "свободно" : v < 0.8 ? "умеренно" : v < 1 ? "плотно" : "пробка";
+  const VPS = Object.fromEntries(D.vertiports.map((v) => [v.id, v]));
+  const ZN = Object.fromEntries(D.zlabels.map((z) => [z.id, z]));
+  const STN = Object.fromEntries(D.stations.map((s) => [s.n, s]));
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const mobileQ = window.matchMedia("(max-width: 759px)");
+
+  // ---------- цвета карты ----------
+  const MAP = {
+    ground: [238, 241, 244], park: [204, 230, 197], water: [168, 210, 246], rail: [176, 184, 196],
+    roadCase: [210, 217, 227], road: [255, 255, 255], minor: [252, 253, 254],
+    bld: [229, 232, 237], bldCtx: [222, 225, 231], sel: [42, 120, 214],
+    sq: [27, 92, 171, 150], corr: [42, 120, 214, 150], fl: [27, 92, 171], dead: [140, 151, 166], car: [22, 52, 120], carBg: [64, 72, 86],
+    traffic: [[30, 142, 62], [242, 153, 0], [217, 48, 37], [128, 20, 20]],
+    vp: [42, 120, 214], metro: [210, 58, 48], label: [70, 80, 95], vpInk: [27, 92, 171], metroInk: [168, 38, 32],
+    noise: [[255, 236, 160], [252, 205, 110], [246, 160, 70], [226, 92, 44], [170, 32, 24]],
+    walkLeg: [86, 101, 122, 230], direct: [95, 107, 122, 150], routeB: [217, 48, 37], ink: [15, 26, 42],
+  };
+  const trafficColor = (v) => MAP.traffic[v < 0.55 ? 0 : v < 0.8 ? 1 : v < 1 ? 2 : 3];
+  const roadW = (k) => ({ trunk: 17, primary: 14, secondary: 10, tertiary: 8 }[k] || 6);
+  const FONT = '"Onest", "Segoe UI", Roboto, Arial, sans-serif';
+  // плоские слои и подписи рисуются по порядку, без теста глубины: земля не мерцает, значки всегда поверх домов
+  const FLAT = { depthWriteEnabled: false, depthCompare: "always", depthTest: false };
+  const padData = D.vertiports.flatMap((v) => v.pads.map((p) => ({ p: p.map((q) => [q[0], q[1], v.z + 0.5]), v })));
+  const [cx, cy] = D.center;
+  const ground = [[cx - 0.06, cy - 0.04], [cx + 0.06, cy - 0.04], [cx + 0.06, cy + 0.04], [cx - 0.06, cy + 0.04]];
+  const darker = (c) => c.map((x) => Math.round(x * 0.62));
+  // машины — точки в одном масштабе для жителей и для фона, чтобы плотность точек совпадала с цветом дороги
+  const CAR_SCALE = 5;
+  const CAR_SCHED = {};
+  function carSchedule(key) {        // key: "rush" | "day"; для каждого пути — точки, длины и времена въезда
+    if (CAR_SCHED[key]) return CAR_SCHED[key];
+    const groups = [];
+    const add = (pts, T, starts, bg) => {
+      const cum = [0];
+      for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + meters(pts[i - 1], pts[i]));
+      groups.push({ pts, cum, L: cum[cum.length - 1] || 1, T, s: Float64Array.from(starts).sort(), bg });
+    };
+    // поездки жителей между зонами: путь один на направление, у машин — время выезда; берём каждую пятую
+    for (const g of D.cars[key]) add(g.p, g.T, g.s.filter((_, i) => i % CAR_SCALE === 0), 0);
+    // фоновое движение (транзит, такси, развоз): на каждом участке столько машин в час, сколько заложено в модели
+    const fk = key === "rush" ? "br" : "bn", tk = key === "rush" ? "tr" : "tn";
+    let seed = key === "rush" ? 7 : 11;
+    const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    for (const r of D.roads) {
+      const n = Math.round(r[fk] / CAR_SCALE), T = r[tk];
+      if (!n) continue;
+      const st = [];
+      for (let i = 0; i < n; i++) st.push(rnd() * (3600 + T) - T);
+      add(r.p, T, st, 1);
+    }
+    return (CAR_SCHED[key] = groups);
+  }
+  // где машины в момент t: считаем только тех, кто сейчас едет — их в каждый момент 1–2 % от всех за час
+  function carsAt(key, t) {
+    const out = [];
+    for (const g of carSchedule(key)) {
+      let lo = 0, hi = g.s.length;
+      const from = t - g.T;
+      while (lo < hi) { const mid = (lo + hi) >> 1; if (g.s[mid] < from) lo = mid + 1; else hi = mid; }
+      for (let i = lo; i < g.s.length && g.s[i] <= t; i++) {
+        const dist = (t - g.s[i]) / g.T * g.L;
+        let j = 1;
+        while (j < g.cum.length - 1 && g.cum[j] < dist) j++;
+        const a = g.pts[j - 1], b = g.pts[j], seg = g.cum[j] - g.cum[j - 1] || 1;
+        const f = Math.min(1, Math.max(0, (dist - g.cum[j - 1]) / seg));
+        out.push({ p: [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, 1.5], bg: g.bg });
+      }
+    }
+    return out;
+  }
+  const ST_OFF = { "Полежаевская": [12, -9], "Хорошёвская": [12, 9] };
+  // у одной улицы много участков: в поиске и карточке берём самый «главный» и самый длинный
+  const RANK = { trunk: 0, primary: 1, secondary: 2, tertiary: 3, other: 4 };
+  const bestRoad = {};
+  D.roads.forEach((r) => {
+    if (!r.nm) return;
+    const n = r.nm.split(" / ")[0], b = bestRoad[n];
+    if (!b || RANK[r.k] < RANK[b.k] || (RANK[r.k] === RANK[b.k] && r.p.length > b.p.length)) bestRoad[n] = r;
+  });
+  // расстояние в метрах между точками [долгота, широта] — в масштабе района хватает плоской проекции
+  const KX = 111320 * Math.cos(cy * Math.PI / 180), KY = 110574;
+  const meters = (a, b) => Math.hypot((a[0] - b[0]) * KX, (a[1] - b[1]) * KY);
+  const nearestVp = (c) => D.vertiports.reduce((best, v) => meters(v.c, c) < meters(best.c, c) ? v : best);
+
+  // ---------- сценарии ----------
+  const SC = {
+    limit: { roads: "vr", fl: D.flights.limit, cars: "rush", noise: "limit", nk: "nl", h0: 8, rush: true,
+      note: `Час пик, 8–9 ч. Площадки работают на пределе: ${S.flights.limit} ${form(S.flights.limit, W_.fl)} в час.` },
+    price: { roads: "vr", fl: D.flights.price, cars: "rush", noise: "price", nk: "np", h0: 8, rush: true,
+      note: `Час пик, 8–9 ч. По цене 400 ₽ летят ${S.rush.air_want} ${form(S.rush.air_want, W_.man)} в час: ${S.flights.price} ${form(S.flights.price, W_.fl)}.` },
+    day: { roads: "vn", fl: D.flights.day, cars: "day", noise: "price", nk: "np", h0: 13, rush: false,
+      note: `Дневной час, 13–14 ч. По цене 400 ₽ — ${S.flights.day} ${form(S.flights.day, W_.fl)} в час.` },
+  };
+  const state = { scen: "limit", t: 1500, playing: !reduce, sel: null, sheet: "peek",
+    route: { open: false, a: null, b: null },
+    layers: { traffic: true, corr: true, flights: true, cars: false, noise: false, zones: false } };
+  const selKey = () => !state.sel ? "" : state.sel.type === "bld" ? "b" + state.sel.obj.ct.join() : state.sel.type + (state.sel.id || "");
+  const isSel = (type, id) => state.sel && state.sel.type === type && state.sel.id === id;
+
+  // ---------- маршрут: время «от двери до двери» по тем же формулам, что в модели ----------
+  function calcRoute(a, b) {
+    const sc = SC[state.scen], rush = sc.rush;
+    const d = meters(a.c, b.c), dr = d * PRM.k_road, v = rush ? PRM.v_rush : PRM.v_day;
+    const tnet = dr / v, walkV = PRM.walk_v, det = PRM.detour;
+    const busWait = rush ? PRM.bus_wait_rush : PRM.bus_wait_day, load = rush ? PRM.bus_load_rush : PRM.bus_load_day;
+    const evJ = ((PRM.f_roll + PRM.f_air) * dr + 3 * dr / 1000 * PRM.e_stop) / PRM.eta + PRM.p_aux * tnet;
+    const modes = [
+      { k: "walk", icon: IC.walk, name: "Пешком", cost: 0, kwh: 0,
+        seg: [["walk", d * det / walkV]], sub: `${dec(d * det / 1000)} км с обходами домов` },
+      { k: "bus", icon: IC.bus, name: "Автобус", cost: PRM.cost.bus, kwh: PRM.bus_kwh_km * dr / 1000 / load,
+        seg: [["walk", PRM.bus_acc / 2], ["wait", busWait], ["bus", PRM.bus_slow * tnet], ["walk", PRM.bus_acc / 2]],
+        sub: `до остановки и от неё ${mins(PRM.bus_acc)} мин, ждать ${dec(busWait / 60)} мин` },
+      { k: "car", icon: IC.car, name: "Машина", cost: PRM.cost.car, kwh: evJ / 3.6e6 / PRM.occ,
+        seg: [["walk", PRM.car_acc / 2], ["car", tnet], ["walk", PRM.car_acc / 2]],
+        sub: `${dec(dr / 1000)} км по дорогам, средняя скорость ${dec(v)} м/с` },
+    ];
+    const va = nearestVp(a.c), vb = nearestVp(b.c);
+    let air;
+    if (va.id === vb.id) air = { k: "air", icon: IC.plane, name: "eVTOL", na: `у обеих точек ближайший вертипорт один — ${va.id}, лететь некуда` };
+    else {
+      const dv = meters(va.c, vb.c), wa = meters(a.c, va.c) * det / walkV, wb = meters(vb.c, b.c) * det / walkV, fly = 120 + dv / 20;
+      air = { k: "air", icon: IC.plane, name: "eVTOL", cost: PRM.cost.air, kwh: (160e3 * 120 + 80e3 * dv / 20) / 3.6e6 / 2, va, vb,
+        seg: [["walk", wa], ["wait", PRM.t_check], ["fly", fly], ["wait", PRM.t_deb], ["walk", wb]],
+        sub: `${va.id} → ${vb.id}: пешком ${mins(wa)} + досмотр ${mins(PRM.t_check)} + полёт ${dec(fly / 60)} + высадка ${mins(PRM.t_deb)} + пешком ${mins(wb)} мин` };
+    }
+    modes.push(air);
+    modes.forEach((m) => { if (!m.na) m.t = m.seg.reduce((s, x) => s + x[1], 0); });
+    return { d, modes, air: air.na ? null : air };
+  }
+  function endpointOf(sel) {
+    if (!sel) return null;
+    if (sel.type === "vp") { const v = VPS[sel.id]; return { name: v.name, sub: `вертипорт ${v.id}`, c: v.c }; }
+    if (sel.type === "st") { const s = STN[sel.id]; return { name: `Метро «${s.n}»`, sub: "станция метро", c: s.c }; }
+    if (sel.type === "zone") { const z = ZN[sel.id]; return { name: `${z.id} · ${z.name}`, sub: "центр зоны", c: z.c }; }
+    if (sel.type === "bld") { const b = sel.obj; return { name: b.n || KIND[b.k] || "Здание", sub: b.a || (b.z ? `зона ${b.z}` : "за границей квадрата"), c: b.ct }; }
+    if (sel.type === "road") return { name: sel.obj.nm || "Улица", sub: "точка на улице", c: sel.at };
+    return null;
+  }
+  function exampleRoute() {
+    const a = D.buildings.filter((b) => b.z === "Z5" && b.r).sort((x, y) => y.r - x.r)[0];
+    const b = D.buildings.find((x) => x.n === "Авиапарк");
+    state.route.a = endpointOf({ type: "bld", obj: a });
+    state.route.b = b ? endpointOf({ type: "bld", obj: b }) : endpointOf({ type: "vp", id: "V2" });
+  }
+
+  // ---------- свет ----------
+  const lighting = new deck.LightingEffect({
+    ambient: new deck.AmbientLight({ color: [255, 255, 255], intensity: 0.86 }),
+    sun: new deck.DirectionalLight({ color: [255, 250, 242], intensity: 0.75, direction: [-1.2, -2.4, -8], _shadow: false }),
+  });
+  const MAT = { ambient: 0.6, diffuse: 0.5, shininess: 12, specularColor: [30, 30, 30] };
+  // шум у дома: эквивалентный уровень за день, дБА → цвет; тише 45 дБА дом остаётся серым
+  const NOISE_BINS = [[50, [255, 238, 176]], [55, [252, 204, 110]], [60, [244, 146, 66]], [65, [222, 78, 42]], [Infinity, [160, 26, 20]]];
+  const noiseColor = (v) => {
+    if (v === undefined || v < 45) return null;
+    for (const [t, c] of NOISE_BINS) if (v < t) return c;
+    return null;
+  };
+  const bColor = (b) => {
+    const s = state.sel;
+    if (s && s.type === "bld" && b.ct[0] === s.obj.ct[0] && b.ct[1] === s.obj.ct[1]) return MAP.sel;
+    if (state.layers.noise) { const c = noiseColor(b[SC[state.scen].nk]); if (c) return c; }
+    if (state.layers.zones && b.z) {
+      const c = ZN[b.z].col, m = 0.32;
+      return MAP.bld.map((x, i) => Math.round(x * (1 - m) + c[i] * m));
+    }
+    return b.z ? MAP.bld : MAP.bldCtx;
+  };
+
+  function routeLayers(text) {
+    const { a, b, open } = state.route;
+    if (!open) return [];
+    const out = [];
+    const pts = [a && { c: a.c, role: "a" }, b && { c: b.c, role: "b" }].filter(Boolean);
+    if (a && b) {
+      const R = calcRoute(a, b);
+      out.push(new deck.PathLayer({ id: "route-direct", data: [[a.c, b.c]], getPath: (d) => d, getColor: MAP.direct, getWidth: 2,
+        widthUnits: "pixels", parameters: FLAT }));
+      if (R.air) {
+        const { va, vb } = R.air;
+        out.push(new deck.PathLayer({ id: "route-walk", data: [[a.c, va.c], [vb.c, b.c]], getPath: (d) => d, getColor: MAP.walkLeg,
+          getWidth: 3, widthUnits: "pixels", capRounded: true, parameters: FLAT }));
+        out.push(new deck.PathLayer({ id: "route-fly", data: [[[...va.c, va.z], [...va.c, 120], [...vb.c, 120], [...vb.c, vb.z]]],
+          getPath: (d) => d, getColor: MAP.fl, getWidth: 6, widthUnits: "pixels", capRounded: true, jointRounded: true, billboard: true }));
+      }
+    }
+    out.push(new deck.ScatterplotLayer({ id: "route-pts", data: pts, getPosition: (d) => [d.c[0], d.c[1], 3],
+      getRadius: (d) => d.role === "a" ? 8 : 10, radiusUnits: "pixels", getFillColor: (d) => d.role === "a" ? [255, 255, 255] : MAP.routeB,
+      stroked: true, getLineColor: (d) => d.role === "a" ? MAP.ink : [255, 255, 255], getLineWidth: 3, lineWidthUnits: "pixels",
+      billboard: true, parameters: FLAT }));
+    out.push(new deck.TextLayer({ id: "route-l", data: pts, getPosition: (d) => [d.c[0], d.c[1], 3], getText: (d) => d.role === "a" ? "Откуда" : "Куда",
+      getSize: 12, getColor: MAP.ink, getPixelOffset: [0, -20], fontWeight: 600, ...text, background: true,
+      getBackgroundColor: [255, 255, 255, 240], backgroundPadding: [6, 3] }));
+    return out;
+  }
+
+  function layers() {
+    const L = state.layers, sc = SC[state.scen];
+    const text = { fontFamily: FONT, characterSet: "auto", parameters: FLAT };
+    const halo = { fontSettings: { sdf: true }, outlineWidth: 3, outlineColor: [255, 255, 255, 235] };
+    const out = [
+      new deck.SolidPolygonLayer({ id: "ground", data: [{ p: ground }], getPolygon: (d) => d.p, getFillColor: MAP.ground, parameters: FLAT }),
+      new deck.SolidPolygonLayer({ id: "water", data: D.water, getPolygon: (d) => d, getFillColor: MAP.water, parameters: FLAT }),
+      new deck.SolidPolygonLayer({ id: "parks", data: D.parks, getPolygon: (d) => d, getFillColor: MAP.park, parameters: FLAT }),
+      new deck.PathLayer({ id: "rails", data: D.rails, getPath: (d) => d, getColor: MAP.rail, getWidth: 3, widthUnits: "meters", widthMinPixels: 1, parameters: FLAT }),
+      new deck.PathLayer({ id: "minor", data: D.minor, getPath: (d) => d, getColor: MAP.minor, getWidth: 6, widthUnits: "meters", widthMinPixels: 1, parameters: FLAT }),
+      new deck.PathLayer({ id: "road-case", data: D.roads, getPath: (d) => d.p, getColor: MAP.roadCase, getWidth: (d) => roadW(d.k) + 4,
+        widthUnits: "meters", widthMinPixels: 2.5, capRounded: true, jointRounded: true, parameters: FLAT }),
+      new deck.PathLayer({ id: "roads", data: D.roads, getPath: (d) => d.p, getColor: (d) => L.traffic ? trafficColor(d[sc.roads]) : MAP.road,
+        getWidth: (d) => roadW(d.k), widthUnits: "meters", widthMinPixels: 1.5, capRounded: true, jointRounded: true, pickable: true,
+        autoHighlight: true, highlightColor: [42, 120, 214, 140], parameters: FLAT, updateTriggers: { getColor: [L.traffic, sc.roads] } }),
+      new deck.PathLayer({ id: "square", data: [D.square], getPath: (d) => d, getColor: MAP.sq, getWidth: 2, widthUnits: "pixels", parameters: FLAT }),
+    ];
+    if (L.zones) out.push(new deck.PolygonLayer({ id: "zones", data: D.zones, getPolygon: (d) => d.p, filled: true, stroked: true,
+      getFillColor: (d) => [...d.col, 34], getLineColor: (d) => [...d.col, 200], getLineWidth: 2, lineWidthUnits: "pixels", pickable: true, parameters: FLAT }));
+    if (L.noise && NOISE_IMG[sc.noise]) out.push(new deck.BitmapLayer({ id: "noise", image: NOISE_IMG[sc.noise], bounds: D.noise.bounds,
+      opacity: 0.85, parameters: FLAT }));
+    out.push(new deck.PolygonLayer({ id: "bld", data: D.buildings, getPolygon: (d) => d.p, extruded: true, getElevation: (d) => d.h,
+      getFillColor: bColor, material: MAT, pickable: true, autoHighlight: true, highlightColor: [42, 120, 214, 110],
+      updateTriggers: { getFillColor: [L.zones, L.noise, state.scen, selKey()] } }));
+    out.push(new deck.PolygonLayer({ id: "pads", data: padData, getPolygon: (d) => d.p, getFillColor: [42, 120, 214, 230],
+      getLineColor: [255, 255, 255], getLineWidth: 1, lineWidthUnits: "pixels", stroked: true, pickable: true }));
+    if (L.corr) out.push(new deck.PathLayer({ id: "corr", data: D.corridors, getPath: (d) => d.p, getColor: MAP.corr, getWidth: 4,
+      widthUnits: "pixels", capRounded: true, jointRounded: true, billboard: true }));
+    if (L.cars) out.push(new deck.ScatterplotLayer({ id: "cars", data: carsAt(sc.cars, state.t), getPosition: (d) => d.p,
+      getRadius: 3.8, radiusUnits: "pixels", getFillColor: (d) => d.bg ? MAP.carBg : MAP.car, stroked: true,
+      getLineColor: [255, 255, 255, 210], getLineWidth: 1, lineWidthUnits: "pixels", billboard: true }));
+    if (L.flights) out.push(new deck.TripsLayer({ id: "flights", data: sc.fl, getPath: (d) => d.p, getTimestamps: (d) => d.t,
+      currentTime: state.t, trailLength: 90, getColor: (d) => d.e ? MAP.dead : MAP.fl, getWidth: 5, widthUnits: "pixels",
+      capRounded: true, jointRounded: true, billboard: true }));
+    out.push(new deck.TextLayer({ id: "streets", data: D.slabels, getPosition: (d) => [d.c[0], d.c[1], 0.5], getText: (d) => d.t,
+      getAngle: (d) => d.a, billboard: false, sizeUnits: "meters", getSize: 17, sizeMaxPixels: 14, getColor: MAP.label, fontWeight: 500,
+      ...text, ...halo }));
+    if (L.zones) out.push(new deck.TextLayer({ id: "zlabel", data: D.zlabels, getPosition: (d) => [d.c[0], d.c[1], 40],
+      getText: (d) => `${d.id} · ${d.short}`, getSize: 13, getColor: (d) => darker(d.col), fontWeight: 600, ...text, ...halo, outlineWidth: 4 }));
+    out.push(...routeLayers(text));
+    out.push(new deck.ScatterplotLayer({ id: "metro", data: D.stations, getPosition: (d) => [d.c[0], d.c[1], 4], getRadius: 9,
+      radiusUnits: "pixels", getFillColor: MAP.metro, stroked: true, getLineColor: [255, 255, 255], getLineWidth: 2, lineWidthUnits: "pixels",
+      billboard: true, pickable: true, parameters: FLAT }));
+    out.push(new deck.TextLayer({ id: "metro-m", data: D.stations, getPosition: (d) => [d.c[0], d.c[1], 4], getText: () => "М", getSize: 10.5,
+      getColor: [255, 255, 255], fontWeight: 600, ...text }));
+    out.push(new deck.TextLayer({ id: "metro-l", data: D.stations, getPosition: (d) => [d.c[0], d.c[1], 4], getText: (d) => d.n, getSize: 12,
+      getColor: MAP.metroInk, getPixelOffset: (d) => ST_OFF[d.n] || [13, 0], getTextAnchor: "start", getAlignmentBaseline: "center",
+      fontWeight: 500, ...text, ...halo }));
+    out.push(new deck.ScatterplotLayer({ id: "vp", data: D.vertiports, getPosition: (d) => [d.c[0], d.c[1], d.z + 2],
+      getRadius: (d) => isSel("vp", d.id) ? 15 : 12, radiusUnits: "pixels", getFillColor: MAP.vp, stroked: true, getLineColor: [255, 255, 255],
+      getLineWidth: 2.5, lineWidthUnits: "pixels", billboard: true, pickable: true, parameters: FLAT, updateTriggers: { getRadius: selKey() } }));
+    out.push(new deck.TextLayer({ id: "vp-h", data: D.vertiports, getPosition: (d) => [d.c[0], d.c[1], d.z + 2], getText: () => "H",
+      getSize: (d) => isSel("vp", d.id) ? 14 : 12, getColor: [255, 255, 255], fontWeight: 600, ...text, updateTriggers: { getSize: selKey() } }));
+    // подпись вертипорта — на белой плашке, чтобы читалась и над площадками, и над домами;
+    // V1 стоит рядом со станциями «Полежаевская» и «Хорошёвская», поэтому его подпись слева
+    out.push(new deck.TextLayer({ id: "vp-l", data: D.vertiports, getPosition: (d) => [d.c[0], d.c[1], d.z + 2], getText: (d) => `${d.id} ${d.short}`,
+      // на телефоне V1 у самого левого края экрана, поэтому там его подпись над значком
+      getSize: 12.5, getColor: MAP.vpInk,
+      getPixelOffset: (d) => d.id !== "V1" ? [20, 0] : mobileQ.matches ? [0, -24] : [-20, 0],
+      getTextAnchor: (d) => d.id !== "V1" ? "start" : mobileQ.matches ? "middle" : "end",
+      getAlignmentBaseline: "center", fontWeight: 600, ...text, background: true, getBackgroundColor: [255, 255, 255, 240],
+      backgroundPadding: [6, 3], getBorderColor: [198, 218, 243, 255], getBorderWidth: 1,
+      updateTriggers: { getPixelOffset: mobileQ.matches, getTextAnchor: mobileQ.matches } }));
+    return out;
+  }
+
+  // ---------- камера ----------
+  function visibleRect() {
+    const Wd = innerWidth, H = innerHeight;
+    let left = 0, right = Wd, top, bottom;
+    if (mobileQ.matches) {
+      top = $("#chips").getBoundingClientRect().bottom + 6;
+      const sheetTop = state.sheet === "half" ? H * 0.54 : state.sheet === "full" ? H * 0.14 : $("#timebar .tcard").getBoundingClientRect().top;
+      bottom = sheetTop - 8;
+    } else {
+      top = $("#search").getBoundingClientRect().bottom + 8;
+      left = $("#panel").getBoundingClientRect().right + 8;
+      right = $("#ctrl").getBoundingClientRect().left - 8;
+      bottom = $("#timebar .tcard").getBoundingClientRect().top - 8;
+    }
+    if (right - left < 160) { left = 0; right = Wd; }
+    if (bottom - top < 160) { top = 0; bottom = H; }
+    return { left, right, top, bottom };
+  }
+  let deckgl = null;
+  function view() {
+    const v = deckgl && deckgl.getViewports()[0];
+    return v ? { longitude: v.longitude, latitude: v.latitude, zoom: v.zoom, pitch: v.pitch, bearing: v.bearing } : null;
+  }
+  // центр карты, при котором точка lngLat окажется в середине свободной от панелей части экрана
+  function framed(lngLat, zoom, pitch, bearing) {
+    const Wd = innerWidth, H = innerHeight, r = visibleRect();
+    const vp = new deck.WebMercatorViewport({ width: Wd, height: H, longitude: lngLat[0], latitude: lngLat[1], zoom, pitch, bearing });
+    const pos = [(r.left + r.right) / 2, (r.top + r.bottom) / 2];
+    const c = vp.unproject([Wd - pos[0], H - pos[1]]);
+    return { longitude: c[0], latitude: c[1], zoom, pitch, bearing };
+  }
+  function flyTo(v, mode) {
+    const instant = reduce || mode === "instant";
+    deckgl.setProps({ initialViewState: { ...v, transitionDuration: instant ? 0 : mode === "quick" ? 250 : 1100,
+      transitionInterpolator: mode === "quick" ? new deck.LinearInterpolator(["longitude", "latitude", "zoom", "pitch", "bearing"]) : new deck.FlyToInterpolator() } });
+  }
+  // масштаб, при котором прямоугольник из точек помещается в свободную часть экрана (для повёрнутой камеры — с запасом)
+  function fitZoom(pts, fallback, bearingDeg) {
+    const Wd = innerWidth, H = innerHeight, r = visibleRect();
+    const lons = pts.map((q) => q[0]), lats = pts.map((q) => q[1]);
+    try {
+      const fit = new deck.WebMercatorViewport({ width: Wd, height: H }).fitBounds(
+        [[Math.min(...lons), Math.min(...lats)], [Math.max(...lons), Math.max(...lats)]],
+        { padding: { left: r.left + 24, right: Wd - r.right + 24, top: r.top + 24, bottom: H - r.bottom + 24 } });
+      const b = Math.abs(bearingDeg) * Math.PI / 180;
+      return fit.zoom - Math.log2(Math.abs(Math.cos(b)) + Math.abs(Math.sin(b)));
+    } catch (e) { return fallback; }
+  }
+  function overviewState() {
+    const zoom = fitZoom(D.square, 14.4, 20) - (mobileQ.matches ? 0.3 : 0.05);
+    return framed(D.center, zoom, 50, -20);
+  }
+  function fitRoute(mode) {
+    const { a, b } = state.route;
+    if (!a || !b) return;
+    const R = calcRoute(a, b);
+    const pts = [a.c, b.c, ...(R.air ? [R.air.va.c, R.air.vb.c] : [])];
+    const cur = view(), bearing = cur ? cur.bearing : -20;
+    const zoom = Math.min(16.6, fitZoom(pts, 15, bearing) - 0.3);
+    const lons = pts.map((q) => q[0]), lats = pts.map((q) => q[1]);
+    flyTo(framed([(Math.min(...lons) + Math.max(...lons)) / 2, (Math.min(...lats) + Math.max(...lats)) / 2], zoom, 40, bearing), mode);
+  }
+  function selTarget() {
+    const s = state.sel;
+    if (!s) return D.center;
+    return s.type === "vp" ? VPS[s.id].c : s.type === "st" ? STN[s.id].c : s.type === "zone" ? ZN[s.id].c : s.type === "bld" ? s.obj.ct : s.at;
+  }
+  function focusSel(mode) {
+    const s = state.sel, cur = view();
+    if (!s) return flyTo(overviewState(), mode);
+    const keep = cur ? cur.bearing : -20;
+    const z = { vp: [16.8, 55], st: [16.5, 45], zone: [15.4, 40], bld: [17.2, 50], road: [16.3, 45] }[s.type];
+    flyTo(framed(selTarget(), z[0], z[1], keep), mode);
+  }
+
+  // ---------- карточки ----------
+  const act = (a, icon, label, opt = {}) =>
+    `<button class="act${opt.primary ? " primary" : ""}" data-act="${a}"${opt.pressed !== undefined ? ` aria-pressed="${opt.pressed}"` : ""}><span class="ring">${icon}</span>${label}</button>`;
+  const fact = (icon, t, m, bad) => `<li class="${bad ? "bad" : ""}">${icon}<div><div class="f-t">${t}</div>${m ? `<div class="f-m">${m}</div>` : ""}</div></li>`;
+  const head = (title, sub, back) => `<div class="phead">${back ? `<button class="icon-btn" data-act="${back}" aria-label="Назад">${IC.back}</button>` : ""}<div><h1 class="ptitle">${esc(title)}</h1>${sub ? `<p class="psub">${sub}</p>` : ""}</div></div>`;
+  const chev = IC.chev.replace("<svg", '<svg class="chev"');
+  const vpRow = (v) => `<button class="row" data-sel="vp:${v.id}"><span class="pin vp">H</span><span class="r-main"><span class="r-t">${v.id} · ${esc(v.name)}</span><span class="r-m">${v.roof ? "на крыше" : "наземный"} · до жилья ${v.dist} м · зоны ${v.zones.join(", ")}</span></span>${chev}</button>`;
+  const zoneRow = (z) => `<button class="row" data-sel="zone:${z.id}"><span class="dot" style="background:rgb(${z.col.join(",")})"></span><span class="r-main"><span class="r-t">${z.id} · ${esc(z.name)}</span><span class="r-m">${fmt(z.res)} жит. · ${fmt(z.work)} мест работы и учёбы</span></span>${chev}</button>`;
+  const stRow = (s) => `<button class="row" data-sel="st:${esc(s.n)}"><span class="pin metro">М</span><span class="r-main"><span class="r-t">${esc(s.n)}</span><span class="r-m">станция метро · узел зоны ${s.zone}</span></span>${chev}</button>`;
+  const zoneTitle = (z) => z.func === "транспортный узел" ? "Транспортный узел" : z.func[0].toUpperCase() + z.func.slice(1) + " зона";
+  const routeActs = () => `${act("from", IC.from, "Отсюда")}${act("to", IC.to, "Сюда")}`;
+
+  function homeHTML() {
+    const s = S.rush, d = S.day;
+    return head("Ходынка-2040", "Модель района у Ходынского поля · Москва · квадрат 2×2 км") +
+      `<div class="actions">${act("overview", IC.target, "Весь район", { primary: true })}${act("route", IC.route, "Маршрут")}${act("top", IC.flat, "Сверху")}${act("noise", IC.noise, "Шум", { pressed: state.layers.noise })}</div>
+      <ul class="facts">
+        ${fact(IC.people, `${fmt(S.residents)} ${form(S.residents, W_.res)} в квадрате`, "по площади жилья; число сверено с переписью района")}
+        ${fact(IC.trips, `${fmt(s.trips)} ${form(s.trips, W_.trip)} между зонами в час пик`, `днём — ${fmt(d.trips)} в час`)}
+        ${fact(IC.walk, `Пешком ${s.modes[0]}%, на автобусе ${s.modes[1]}%, на машине ${s.modes[2]}%`, "так ездят между зонами без eVTOL")}
+        ${fact(IC.clock, `Полёт быстрее земли в ${s.faster}% поездок`, `даже без очереди: в среднем ${dec(s.door_air)} мин «от двери до двери» против ${dec(s.door_ground)} мин по земле`)}
+        ${fact(IC.pin, `Половине жителей идти до вертипорта больше ${S.walk_median} мин`, `за 6 минут дойдут ${S.walk_6min}%`)}
+        ${fact(IC.ticket, `При билете 400 ₽ летят ${s.air_want} ${form(s.air_want, W_.man)} в час`, `если полёт бесплатный — ${s.free_want}, ждать в среднем ${s.free_wait} мин`)}
+        ${fact(IC.pad, `Площадки пропускают около ${s.cap} человек в час`, `лететь могли бы ${fmt(s.all_dem)} в час`, true)}
+        ${fact(IC.noise, `Без превышения шума — до ${S.noise_safe} полётов в час`, `при ${S.flights.limit} ${form(S.flights.limit, W_.flP)} в час выше 55 дБА днём у ${fmt(S.noise_day55)} ${form(S.noise_day55, W_.resG)}`, true)}
+      </ul>
+      <section class="list"><h2>Вертипорты</h2>${D.vertiports.map(vpRow).join("")}</section>
+      <section class="list"><h2>Зоны</h2>${D.zlabels.map(zoneRow).join("")}</section>
+      <section class="list"><h2>Метро</h2>${D.stations.map(stRow).join("")}</section>
+      <p class="foot">Здания, улицы и парки — © участники OpenStreetMap. Спрос — гравитационная модель, машины распределены по сети с пробками, вертипорты посчитаны посекундной симуляцией. С 1910 по 2003 год на Ходынском поле работал Центральный аэродром.</p>`;
+  }
+  function vpHTML(v) {
+    const zs = v.zones.map((z) => `${z} — ${esc(ZN[z].short)}`).join(", ");
+    return head(v.name, `Вертипорт ${v.id} · ${v.roof ? "на крыше" : "наземный"} · 2 площадки 30×30 м`, "home") +
+      `<div class="actions">${act("focus", IC.target, "Показать", { primary: true })}${routeActs()}${act("noise", IC.noise, "Шум", { pressed: state.layers.noise })}</div>
+      <ul class="facts">
+        ${fact(IC.area, v.roof ? `Крыша ${fmt(v.area)} м², высота ${dec(v.z)} м` : `Участок ${fmt(v.area)} м²`, v.roof ? "площадки стоят на готовой крыше, новая земля не нужна" : "площадки на месте парковки")}
+        ${fact(IC.home, `Ближайший жилой дом в ${v.dist} м`, "ближе 150 м к жилью вертипорты не ставились: шум взлёта")}
+        ${fact(IC.zones, `Ближайший вертипорт для зон ${v.zones.join(", ")}`, zs)}
+        ${fact(IC.plane, `На пределе — ${v.dep_limit} ${form(v.dep_limit, W_.dep)} в час`, `площадки заняты ${v.util_limit}% времени`, v.util_limit >= 85)}
+        ${fact(IC.ticket, `По цене 400 ₽ — ${v.dep_price} ${form(v.dep_price, W_.dep)} в час пик`, `если полёт бесплатный, площадки заняты ${v.util_free}% времени`)}
+      </ul>`;
+  }
+  function zoneHTML(z) {
+    const hub = z.hub_out > 0;
+    return head(`${z.id} · ${z.name}`, zoneTitle(z), "home") +
+      `<div class="actions">${act("focus", IC.target, "Показать", { primary: true })}${routeActs()}${act("zones", IC.zones, "Зоны", { pressed: state.layers.zones })}</div>
+      <ul class="facts">
+        ${fact(IC.people, `${fmt(z.res)} ${form(z.res, W_.res)}`, "по площади жилых домов зоны")}
+        ${fact(IC.work, `${fmt(z.work)} мест работы и учёбы`, "офисы, магазины, школы, вузы")}
+        ${fact(IC.trips, `Утром отправляются из зоны ${fmt(z.out)}`, hub ? `жители и ${fmt(z.hub_out)} приехавших на метро` : "жители, 7–10 ч")}
+        ${fact(IC.arrows, `Утром прибывают в зону ${fmt(z.inn)}`, hub ? `на работу, учёбу и ${fmt(z.hub_in)} — к метро` : "на работу и учёбу")}
+        ${fact(IC.road, `Больше всего едут в ${z.flows.map((f) => f.to).join(", ")}`, z.flows.map((f) => `${f.to} — ${fmt(f.n)}`).join(" · "))}
+        ${fact(IC.pad, `Ближайший вертипорт ${z.vp}`, esc(VPS[z.vp].name))}
+      </ul>`;
+  }
+  function stHTML(s) {
+    const z = ZN[s.zone], pair = s.zone === "Z6" ? " (вместе с соседней станцией)" : "";
+    const v = nearestVp(s.c);
+    return head(s.n, `Станция метро · узел зоны ${s.zone}`, "home") +
+      `<div class="actions">${act("focus", IC.target, "Показать", { primary: true })}${routeActs()}${act("top", IC.flat, "Сверху")}</div>
+      <ul class="facts">
+        ${fact(IC.trips, `Утром выходят из метро в район ${fmt(z.hub_out)}${pair}`, "едут на работу и учёбу в зоны квадрата")}
+        ${fact(IC.arrows, `Уходят в метро ${fmt(z.hub_in)}`, "жители, которые работают за пределами района")}
+        ${fact(IC.pad, `Ближайший вертипорт ${v.id} — ${dec(meters(v.c, s.c) * PRM.detour / PRM.walk_v / 60)} мин пешком`, esc(v.name))}
+      </ul>`;
+  }
+  function bldHTML(b) {
+    const kind = KIND[b.k] || "Здание";
+    const sub = [b.n ? kind : null, `${b.l} ${form(b.l, W_.floor)}`, `${Math.round(b.h)} м`].filter(Boolean).join(" · ");
+    const rows = [];
+    if (b.a) rows.push(fact(IC.pin, esc(b.a)));
+    if (b.r) rows.push(fact(IC.people, `≈ ${fmt(b.r)} ${form(b.r, W_.res)}`, "площадь этажей ÷ 77 м² на жителя"));
+    if (b.j) rows.push(fact(IC.work, `≈ ${fmt(b.j)} мест работы и учёбы`));
+    const nk = SC[state.scen].nk;
+    if (b[nk] !== undefined) {
+      const db = (x) => (x < 30 ? "тише 30" : String(Math.round(x)));
+      const v = b[nk], other = nk === "nl" ? b.np : b.nl;
+      const otherTxt = other === undefined ? "" : nk === "nl" ? `; по цене 400 ₽ — ${db(other)} дБА` : `; если площадки на пределе — ${db(other)} дБА`;
+      rows.push(fact(IC.noise, `Шум eVTOL у дома за день: ${db(v)} дБА${v > 55 ? " — выше нормы" : ""}`, `дневная норма у жилья — 55 дБА${otherTxt}`, v > 55));
+    }
+    if (b.z) {
+      rows.push(fact(IC.zones, `Зона ${b.z} · ${esc(ZN[b.z].name)}`));
+      rows.push(fact(IC.walk, `До вертипорта ${b.v} — ${dec(b.w)} мин пешком`, esc(VPS[b.v].name)));
+    } else rows.push(fact(IC.area, "За границей расчётного квадрата", "в модели как окружение: жители учтены в расчёте шума"));
+    return head(b.n || kind, sub, "home") +
+      `<div class="actions">${act("focus", IC.target, "Показать", { primary: true })}${routeActs()}${act("top", IC.flat, "Сверху")}</div><ul class="facts">${rows.join("")}</ul>`;
+  }
+  function roadHTML(r) {
+    return head(r.nm || "Улица без названия", ROADK[r.k] || "Улица", "home") +
+      `<div class="actions">${act("focus", IC.target, "Показать", { primary: true })}${routeActs()}${act("traffic", IC.road, "Пробки", { pressed: state.layers.traffic })}</div>
+      <ul class="facts">
+        ${fact(IC.clock, `Час пик: загрузка ${dec(r.vr, 2)} — ${level(r.vr)}`, "1 — дорога работает на пределе пропускной способности", r.vr >= 1)}
+        ${fact(IC.clock, `Днём: загрузка ${dec(r.vn, 2)} — ${level(r.vn)}`)}
+        ${fact(IC.car, `В час пик ≈ ${fmt(r.vr * r.cap)} машин в час`, `фоновое движение ≈ ${fmt(r.br)}, машины жителей района ≈ ${fmt(Math.max(0, r.vr * r.cap - r.br))}; дорога пропускает ≈ ${fmt(r.cap)} в час`)}
+        ${fact(IC.car, `Днём ≈ ${fmt(r.vn * r.cap)} машин в час`, `фоновое движение ≈ ${fmt(r.bn)}, машины жителей ≈ ${fmt(Math.max(0, r.vn * r.cap - r.bn))}`)}
+      </ul>`;
+  }
+  function routeHTML() {
+    const { a, b } = state.route;
+    const ep = (e, role) => e
+      ? `<div class="ep"><span class="ep-dot ${role}"></span><span class="ep-main"><span class="ep-t">${esc(e.name)}</span><span class="ep-m">${esc(e.sub)}</span></span><button class="icon-btn sm" data-act="clear-${role}" aria-label="Убрать точку">${IC.close}</button></div>`
+      : `<div class="ep empty"><span class="ep-dot ${role}"></span><span class="ep-main"><span class="ep-t">${role === "a" ? "Откуда" : "Куда"}</span><span class="ep-m">нажмите на дом на карте или найдите место в поиске</span></span></div>`;
+    let body = "";
+    if (a && b) {
+      const R = calcRoute(a, b);
+      if (R.d < 40) body = `<p class="verdict">Точки почти совпадают — выберите другое место.</p>`;
+      else {
+        const ok = R.modes.filter((m) => !m.na);
+        const best = ok.reduce((x, y) => (y.t < x.t ? y : x));
+        const ground = ok.filter((m) => m.k !== "air").reduce((x, y) => (y.t < x.t ? y : x));
+        const tmax = Math.max(...ok.map((m) => m.t));
+        const GEN = { walk: "пешком", bus: "автобуса", car: "машины" };
+        let verdict;
+        if (!R.air) verdict = `Быстрее всего — ${best.name.toLowerCase()}: ${mins(best.t)} мин. eVTOL здесь не поможет: ${R.modes[3].na}.`;
+        else {
+          const diff = Math.round((R.air.t - ground.t) / 60);
+          verdict = diff > 0
+            ? `Быстрее всего — ${ground.name.toLowerCase()}: ${mins(ground.t)} мин. Полёт займёт ${mins(R.air.t)} мин, на ${diff} мин дольше.`
+            : diff < 0 ? `Полёт быстрее ${GEN[ground.k] === "пешком" ? "ходьбы" : GEN[ground.k]} на ${-diff} мин: ${mins(R.air.t)} мин против ${mins(ground.t)}, но билет стоит 400 ₽.`
+            : `Полёт и ${ground.name.toLowerCase()} занимают одинаково — по ${mins(ground.t)} мин.`;
+        }
+        const segClass = { walk: "s-walk", wait: "s-wait", bus: "s-bus", car: "s-car", fly: "s-fly" };
+        const rows = R.modes.map((m) => m.na
+          ? `<div class="mode na">${m.icon}<span class="m-name">${m.name}</span><span class="m-time">—</span><span class="m-sub">${esc(m.na)}</span></div>`
+          : `<div class="mode${m === best ? " best" : ""}">${m.icon}<span class="m-name">${m.name}${m === best ? '<span class="best-tag">быстрее всего</span>' : ""}</span><span class="m-time">${mins(m.t)} мин</span>
+             <span class="m-sub">${m.cost ? `${m.cost} ₽ · ${dec(m.kwh, 2)} кВт·ч на человека` : "бесплатно, без затрат энергии"} · ${esc(m.sub)}</span>
+             <span class="m-bar" style="width:${Math.max(6, 100 * m.t / tmax)}%">${m.seg.map(([k, t]) => `<i class="${segClass[k]}" style="flex:${t}"></i>`).join("")}</span></div>`).join("");
+        const sc = SC[state.scen];
+        const fw = Math.round((sc.rush ? PRM.free_wait_rush : PRM.free_wait_day) / 60);
+        body = `<p class="verdict">${verdict}</p><div class="modes">${rows}</div>
+          <div class="seg-key"><span><i class="s-walk"></i>пешком</span><span><i class="s-wait"></i>ожидание, досмотр</span><span><i class="s-bus"></i>автобус</span><span><i class="s-car"></i>машина</span><span><i class="s-fly"></i>полёт</span></div>
+          <p class="foot">Те же формулы, что в модели: пешком ${dec(PRM.walk_v, 2)} м/с с обходами, машина и автобус — со средней скоростью модели (${sc.rush ? "час пик" : "день"}), eVTOL — по прямой трассе, без очереди на площадке. Если полёт бесплатный, ждать в среднем ${fw} мин. Энергия — на одного человека: 1,3 человека в машине, 2 — в eVTOL.</p>`;
+      }
+    }
+    return head("Маршрут", "Время «от двери до двери» пешком, на автобусе, на машине и на eVTOL", "route-close") +
+      `<div class="eps">${ep(a, "a")}${ep(b, "b")}${a || b ? `<button class="icon-btn swap" data-act="swap" aria-label="Поменять местами">${IC.swap}</button>` : ""}</div>${body}`;
+  }
+  function renderPanel() {
+    const s = state.sel;
+    let html = homeHTML();
+    if (state.route.open) html = routeHTML();
+    else if (s) {
+      if (s.type === "vp") html = vpHTML(VPS[s.id]);
+      else if (s.type === "zone") html = zoneHTML(ZN[s.id]);
+      else if (s.type === "st") html = stHTML(STN[s.id]);
+      else if (s.type === "bld") html = bldHTML(s.obj);
+      else if (s.type === "road") html = roadHTML(s.obj);
+    }
+    $("#pbody").innerHTML = html;
+    $("#panel").scrollTop = 0;
+  }
+  function setSheet(st) {
+    state.sheet = st;
+    document.body.dataset.sheet = st;
+    $("#handle").setAttribute("aria-label", st === "full" ? "Свернуть карточку" : "Развернуть карточку");
+  }
+  // ссылка на место: #V2, #Z5 — её можно отправить, и карточка откроется сразу
+  const HASHABLE = /^(V[1-3]|Z[1-6]|route)$/;
+  function setHash() {
+    const s = state.sel;
+    const h = state.route.open ? "route" : s && (s.type === "vp" || s.type === "zone") ? s.id : "";
+    try {
+      if (h && location.hash !== "#" + h) location.hash = h;
+      else if (!h && location.hash) history.replaceState(null, "", location.pathname + location.search);
+    } catch (e) { /* в некоторых окнах адрес менять нельзя — карточка всё равно открыта */ }
+  }
+  function select(sel, fly) {
+    state.sel = sel;
+    state.route.open = false;
+    renderPanel();
+    // на телефоне: выбор из списка или поиска открывает шторку наполовину, тап по карте — только заголовок
+    if (mobileQ.matches && sel) setSheet(fly ? "half" : "peek");
+    refresh();
+    setHash();
+    if (fly) focusSel();
+  }
+  function openRoute(fill) {
+    if (fill === "example" || (!state.route.a && !state.route.b && !fill)) exampleRoute();
+    state.route.open = true;
+    renderPanel();
+    if (mobileQ.matches) setSheet("half");
+    refresh();
+    setHash();
+    fitRoute();
+  }
+  function setEndpoint(role, e) {
+    if (!e) return;
+    state.route[role] = e;
+    state.route.open = true;
+    renderPanel();
+    if (mobileQ.matches) setSheet("half");
+    refresh();
+    setHash();
+    if (state.route.a && state.route.b) fitRoute();
+  }
+  function parseKey(key) {
+    const i = key.indexOf(":"), type = key.slice(0, i), id = key.slice(i + 1);
+    if (type === "road") {
+      const r = bestRoad[id];
+      return r && { type: "road", obj: r, at: r.p[Math.floor(r.p.length / 2)] };
+    }
+    if (type === "bld") { const b = D.buildings[+id]; return b && { type: "bld", obj: b }; }
+    return { type, id };
+  }
+  // в режиме маршрута клик по карте или выбор в поиске ставит точку: сначала «Откуда», потом «Куда»
+  function pickPlace(sel, fly) {
+    if (state.route.open) setEndpoint(state.route.a ? "b" : "a", endpointOf(sel));
+    else select(sel, fly);
+  }
+
+  // ---------- поиск ----------
+  const norm = (s) => s.toLowerCase().replace(/ё/g, "е").replace(/[«»"()]/g, " ").replace(/\s+/g, " ").trim();
+  const ITEMS = [
+    ...D.vertiports.map((v) => ({ key: "vp:" + v.id, t: `${v.id} · ${v.name}`, m: `вертипорт ${v.roof ? "на крыше" : "наземный"}`, pin: '<span class="pin vp">H</span>' })),
+    ...D.stations.map((s) => ({ key: "st:" + s.n, t: s.n, m: "станция метро", pin: '<span class="pin metro">М</span>' })),
+    ...D.zlabels.map((z) => ({ key: "zone:" + z.id, t: `${z.id} · ${z.name}`, m: zoneTitle(z).toLowerCase(), pin: `<span class="dot" style="background:rgb(${z.col.join(",")})"></span>` })),
+  ];
+  Object.entries(bestRoad).forEach(([n, r]) => ITEMS.push({ key: "road:" + n, t: n, m: (ROADK[r.k] || "улица").toLowerCase(), pin: `<span class="pin plain">${IC.road}</span>` }));
+  const seenB = new Set();
+  D.buildings.forEach((b, i) => { if (b.n && !seenB.has(b.n)) { seenB.add(b.n); ITEMS.push({ key: "bld:" + i, t: b.n, m: [KIND[b.k], b.a].filter(Boolean).join(" · ").toLowerCase(), pin: `<span class="pin plain">${IC.building}</span>` }); } });
+  ITEMS.forEach((it) => { it.n = norm(it.t + " " + it.m); });
+  let sugg = [], active = -1;
+  const q = $("#q"), box = $("#suggest");
+  function renderSuggest() {
+    const words = norm(q.value).split(" ").filter(Boolean);
+    $("#clear").hidden = !q.value;
+    sugg = words.length ? ITEMS.filter((it) => words.every((w) => it.n.includes(w))).slice(0, 8) : ITEMS.slice(0, 6);
+    active = -1;
+    const cap = state.route.open ? `Выберите точку «${state.route.a ? "Куда" : "Откуда"}»` : "Места модели";
+    box.innerHTML = (words.length ? "" : `<div class="sg-cap">${cap}</div>`) +
+      (sugg.length ? sugg.map((it, i) => `<button class="sg" role="option" data-i="${i}">${it.pin}<span class="sg-main"><span class="sg-t">${esc(it.t)}</span><span class="sg-m">${esc(it.m)}</span></span></button>`).join("")
+        : '<div class="sg-empty">Ничего не нашлось. Попробуйте название улицы, вертипорта или станции метро.</div>');
+    box.hidden = false;
+  }
+  function pick(i) {
+    const it = sugg[i];
+    if (!it) return;
+    const sel = parseKey(it.key);
+    box.hidden = true; q.blur();
+    if (state.route.open) { q.value = ""; $("#clear").hidden = true; } else { q.value = it.t; $("#clear").hidden = false; }
+    if (sel) pickPlace(sel, true);
+  }
+  q.addEventListener("focus", renderSuggest);
+  q.addEventListener("input", renderSuggest);
+  q.addEventListener("keydown", (e) => {
+    const items = box.querySelectorAll(".sg");
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault();
+      if (!items.length) return;
+      active = (active + (e.key === "ArrowDown" ? 1 : -1) + items.length) % items.length;
+      items.forEach((el, k) => el.classList.toggle("active", k === active));
+      items[active].scrollIntoView({ block: "nearest" });
+    } else if (e.key === "Enter") { e.preventDefault(); pick(active >= 0 ? active : 0); }
+    else if (e.key === "Escape") { box.hidden = true; q.blur(); }
+  });
+  box.addEventListener("mousedown", (e) => e.preventDefault());
+  box.addEventListener("click", (e) => { const b = e.target.closest(".sg"); if (b) pick(+b.dataset.i); });
+  q.addEventListener("blur", () => setTimeout(() => { box.hidden = true; }, 120));
+  $("#clear").addEventListener("click", () => { q.value = ""; $("#clear").hidden = true; q.focus(); renderSuggest(); });
+  $("#home").addEventListener("click", () => { q.value = ""; $("#clear").hidden = true; select(null, false); if (mobileQ.matches) setSheet("half"); });
+  $("#routeBtn").addEventListener("click", () => {
+    if (state.sel && !state.route.open) { state.route.b = endpointOf(state.sel); state.route.a = state.route.a && state.route.a !== state.route.b ? state.route.a : null; }
+    openRoute(state.route.a || state.route.b ? "keep" : null);
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "/" && document.activeElement !== q) { e.preventDefault(); q.focus(); }
+    else if (e.key === "Escape" && document.activeElement !== q && (state.sel || state.route.open)) select(null, false);
+  });
+
+  // ---------- слои, сценарии, время ----------
+  function syncControls() {
+    document.querySelectorAll(".chip").forEach((b) => b.setAttribute("aria-pressed", String(!!state.layers[b.dataset.l])));
+    document.querySelectorAll("#seg button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.s === state.scen)));
+    document.querySelectorAll('[data-act="noise"],[data-act="zones"],[data-act="traffic"]').forEach((b) => b.setAttribute("aria-pressed", String(!!state.layers[b.dataset.act])));
+    $("#snote").textContent = SC[state.scen].note;
+    const L = state.layers, parts = [];
+    const sw = (c) => `<i style="background:rgb(${c.join(",")})"></i>`;
+    if (L.traffic) parts.push(`<span class="lg">Пробки: свободно <span class="ramp">${MAP.traffic.map(sw).join("")}</span> стоят</span>`);
+    if (L.flights) parts.push(`<span class="lg">${sw(MAP.fl)}eVTOL</span><span class="lg">${sw(MAP.dead)}пустой перегон</span>`);
+    if (L.cars) parts.push(`<span class="lg">${sw(MAP.car)}машины жителей</span><span class="lg">${sw(MAP.carBg)}фоновое движение: транзит, такси, развоз</span><span class="lg">1 точка — ${CAR_SCALE} машин</span>`);
+    if (L.noise) {
+      parts.push(`<span class="lg">Шум eVTOL за день <span class="ramp">${NOISE_BINS.map(([, c]) => sw(c)).join("")}</span> 45 → 65+ дБА, норма у жилья 55</span>`);
+      if (state.scen !== "limit") parts.push(`<span class="lg">Полётов мало: у домов не громче ${S.noise_price_max} дБА, поэтому шума почти не видно. Его видно в сценарии «На пределе».</span>`);
+    }
+    $("#legend").innerHTML = parts.join("");
+    $("#play").innerHTML = state.playing ? IC.pause : IC.play;
+    $("#play").setAttribute("aria-label", state.playing ? "Пауза" : "Пуск");
+  }
+  function refresh() { if (deckgl) deckgl.setProps({ layers: layers() }); }
+  function toggleLayer(k) { state.layers[k] = !state.layers[k]; syncControls(); refresh(); }
+  document.querySelectorAll(".chip").forEach((b) => b.addEventListener("click", () => toggleLayer(b.dataset.l)));
+  document.querySelectorAll("#seg button").forEach((b) => b.addEventListener("click", () => {
+    state.scen = b.dataset.s; syncControls(); showTime(); refresh();
+    // время в пути и шум у дома зависят от сценария
+    if (state.route.open || (state.sel && state.sel.type === "bld")) renderPanel();
+  }));
+  const scrub = $("#scrub"), clock = $("#clock");
+  function showTime() {
+    const m = Math.floor(state.t / 60);
+    clock.textContent = `${SC[state.scen].h0}:${String(m).padStart(2, "0")}`;
+    scrub.value = state.t;
+  }
+  $("#play").addEventListener("click", () => { state.playing = !state.playing; syncControls(); });
+  scrub.addEventListener("input", () => { state.t = +scrub.value; showTime(); refresh(); });
+
+  $("#pbody").addEventListener("click", (e) => {
+    const s = e.target.closest("[data-sel]");
+    if (s) { const sel = parseKey(s.dataset.sel); if (sel) select(sel, true); return; }
+    const a = e.target.closest("[data-act]");
+    if (!a) { if (mobileQ.matches && state.sheet === "peek" && e.target.closest(".phead")) setSheet("half"); return; }
+    const k = a.dataset.act;
+    if (k === "home") { select(null, false); if (mobileQ.matches) setSheet("half"); }
+    else if (k === "overview") { if (mobileQ.matches) setSheet("peek"); flyTo(overviewState()); }
+    else if (k === "focus") { if (mobileQ.matches) setSheet("half"); focusSel(); }
+    else if (k === "top") { if (mobileQ.matches) setSheet("peek"); const cur = view(); flyTo(framed(selTarget(), state.sel ? Math.max(cur.zoom, 16) : overviewState().zoom, 0, 0)); }
+    else if (k === "noise" || k === "zones" || k === "traffic") { toggleLayer(k); renderPanel(); }
+    else if (k === "route") openRoute("example");
+    else if (k === "from" || k === "to") setEndpoint(k === "from" ? "a" : "b", endpointOf(state.sel));
+    else if (k === "clear-a" || k === "clear-b") { state.route[k.slice(-1)] = null; renderPanel(); refresh(); }
+    else if (k === "swap") { const t = state.route.a; state.route.a = state.route.b; state.route.b = t; renderPanel(); refresh(); }
+    else if (k === "route-close") { state.route.open = false; renderPanel(); refresh(); setHash(); }
+  });
+
+  // шторка на телефоне: тап — следующее положение, свайп — вверх или вниз
+  const ORDER = ["peek", "half", "full"];
+  let dragY = null;
+  const handle = $("#handle");
+  handle.addEventListener("pointerdown", (e) => { dragY = e.clientY; });
+  handle.addEventListener("pointerup", (e) => {
+    if (dragY === null) return;
+    const dy = e.clientY - dragY; dragY = null;
+    const i = ORDER.indexOf(state.sheet);
+    if (Math.abs(dy) < 8) setSheet(ORDER[(i + 1) % 3]);
+    else setSheet(ORDER[Math.max(0, Math.min(2, i + (dy < 0 ? 1 : -1)))]);
+  });
+  handle.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSheet(ORDER[(ORDER.indexOf(state.sheet) + 1) % 3]); } });
+
+  // кнопки камеры
+  $("#zin").addEventListener("click", () => { const v = view(); flyTo({ ...v, zoom: Math.min(19, v.zoom + 1) }, "quick"); });
+  $("#zout").addEventListener("click", () => { const v = view(); flyTo({ ...v, zoom: Math.max(12, v.zoom - 1) }, "quick"); });
+  $("#compass").addEventListener("click", () => { const v = view(); flyTo({ ...v, bearing: 0 }, "quick"); });
+  $("#tilt").addEventListener("click", () => { const v = view(); flyTo({ ...v, pitch: v.pitch > 5 ? 0 : 50 }, "quick"); });
+
+  // высота панели времени нужна, чтобы на телефоне кнопки камеры стояли над ней
+  const setTimeH = () => document.documentElement.style.setProperty("--time-h", $("#timebar .tcard").offsetHeight + "px");
+  new ResizeObserver(setTimeH).observe($("#timebar .tcard"));
+  setTimeH();
+  setSheet("peek");
+  renderPanel();
+  syncControls();
+  showTime();
+
+  // ---------- карта ----------
+  let lastBearing = null;
+  const needle = $("#compass svg"), tilt = $("#tilt");
+  function camUI(v) {
+    if (!v) return;
+    if (v.bearing !== lastBearing) { lastBearing = v.bearing; needle.style.transform = `rotate(${-v.bearing}deg)`; }
+    const flat = v.pitch < 5, want = flat ? "3D" : "2D";
+    if (tilt.textContent !== want) { tilt.textContent = want; tilt.setAttribute("aria-label", flat ? "Наклонить карту" : "Вид сверху"); }
+  }
+  const tip = $("#tip");
+  const tipText = (layer, o) => {
+    if (layer === "bld") return `${esc(o.n || KIND[o.k] || "Здание")} · ${o.l} ${form(o.l, W_.floor)}`;
+    if (layer === "roads") return esc(o.nm || ROADK[o.k] || "Улица");
+    if (layer === "vp" || layer === "pads") { const v = o.v || o; return `${v.id} · ${esc(v.name)}`; }
+    if (layer === "metro") return `Метро «${esc(o.n)}»`;
+    if (layer === "zones") return `${o.id} · ${esc(ZN[o.id].name)}`;
+    return "";
+  };
+  deckgl = new deck.Deck({
+    parent: document.getElementById("map"),
+    initialViewState: overviewState(),
+    controller: { inertia: 300 },
+    effects: [lighting],
+    layers: layers(),
+    getCursor: ({ isDragging, isHovering }) => isDragging ? "grabbing" : isHovering ? "pointer" : "grab",
+    // компас и подпись 2D/3D обновляем по событию смены вида — так они не отстают от карты
+    onViewStateChange: ({ viewState }) => { camUI(viewState); },
+    // место из ссылки (#V2, #Z5, #route) открываем, только когда карта отрисовалась: раньше камере некуда лететь
+    onLoad: () => { try { fromHash(); } catch (e) { console.warn("не удалось открыть место из ссылки", e); } },
+    onHover: ({ x, y, object, layer }) => {
+      const t = object && layer ? tipText(layer.id, object) : "";
+      if (!t) { tip.hidden = true; return; }
+      tip.innerHTML = t; tip.hidden = false;
+      tip.style.left = Math.min(x + 14, innerWidth - 270) + "px"; tip.style.top = (y + 14) + "px";
+    },
+    onClick: ({ object, layer, coordinate }) => {
+      if (!object || !layer) return;
+      const id = layer.id;
+      if (id === "vp" || id === "pads") pickPlace({ type: "vp", id: (object.v || object).id }, false);
+      else if (id === "metro") pickPlace({ type: "st", id: object.n }, false);
+      else if (id === "bld") pickPlace({ type: "bld", obj: object }, false);
+      else if (id === "roads") pickPlace({ type: "road", obj: object, at: coordinate || object.p[0] }, false);
+      else if (id === "zones") pickPlace({ type: "zone", id: object.id }, false);
+    },
+  });
+
+  // открыть место по ссылке: #V2, #Z5, #route
+  function fromHash() {
+    const h = location.hash.slice(1);
+    if (!HASHABLE.test(h)) return;
+    if (h === "route") { if (!state.route.open) openRoute("example"); return; }
+    const sel = { type: h[0] === "V" ? "vp" : "zone", id: h };
+    if (!isSel(sel.type, sel.id) || state.route.open) select(sel, true);
+  }
+  window.addEventListener("hashchange", fromHash);
+
+  // для автоматических проверок: где на экране окажется точка карты
+  window.TWIN_PROJECT = (lngLat) => { const v = deckgl.getViewports()[0]; return v ? v.project(lngLat) : null; };
+  window.TWIN_PICK = (x, y) => { const o = deckgl.pickObject({ x, y, radius: 2 }); return o ? o.layer.id : null; };
+  window.TWIN_VIEW = () => view();
+  window.TWIN_DEBUG = () => {
+    const live = state.layers.cars ? carsAt(SC[state.scen].cars, state.t).length : 0;
+    return { layers: deckgl.props.layers.map((l) => l.id), live, t: state.t };
+  };
+  // для снимков в отчёт: состояние без анимации
+  window.TWIN_SET = (o) => {
+    if (o.scen) state.scen = o.scen;
+    if (o.layers) Object.assign(state.layers, o.layers);
+    if (o.t !== undefined) state.t = o.t;
+    if (o.playing !== undefined) state.playing = o.playing;
+    if (o.sheet) setSheet(o.sheet);
+    if (o.select !== undefined) { state.sel = o.select ? parseKey(o.select) : null; state.route.open = false; }
+    if (o.route === "example") { exampleRoute(); state.route.open = true; }
+    renderPanel(); syncControls(); showTime(); refresh();
+    if (o.view === "overview") flyTo(overviewState(), "instant");
+    else if (o.view === "focus") focusSel("instant");
+    else if (o.view === "route") fitRoute("instant");
+    else if (o.view) flyTo(o.view, "instant");
+  };
+
+  let last = performance.now();
+  function tick(now) {
+    const dt = (now - last) / 1000; last = now;
+    if (state.playing) { state.t = (state.t + dt * 30) % 3600; showTime(); refresh(); }
+    camUI(view());
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+})();
+</script>
+
+</html>
