@@ -1078,6 +1078,9 @@ svg { display: block; }
     parent: document.getElementById("map"),
     initialViewState: overviewState(),
     controller: { inertia: 300 },
+    // клик засчитываем, даже если компьютер рисует медленно: без видеокарты deck.gl при нажатии полсекунды ищет
+    // объект под курсором, а по умолчанию нажатие дольше 250 мс кликом уже не считается
+    eventRecognizerOptions: { tap: { time: 1500 } },
     effects: [lighting],
     layers: layers(),
     getCursor: ({ isDragging, isHovering }) => isDragging ? "grabbing" : isHovering ? "pointer" : "grab",
